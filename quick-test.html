@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Supabase Connection Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        h1 {
+            color: #1e40af;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #3b82f6;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .config {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+            margin: 20px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .loader {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Quick Supabase Test</h1>
+        <p>Test connection to your corrected Supabase project</p>
+
+        <div class="config">
+            <strong>Configuration:</strong><br>
+            Project ID: vwhgnzioqrhjgvxffuyq<br>
+            URL: https://vwhgnzioqrhjgvxffuyq.supabase.co<br>
+            Current Page: <span id="currentUrl"></span>
+        </div>
+
+        <button onclick="testConnection()" id="testBtn">
+            Test Connection Now
+        </button>
+
+        <div id="results"></div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+            <p style="font-size: 14px; color: #6b7280;">
+                If this test passes, your main app should now work!<br>
+                Go to <a href="/dmk/" style="color: #3b82f6;">your DMK app</a> to verify.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://vwhgnzioqrhjgvxffuyq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aGduemlvcXJoamd2eGZmdXlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNzg2NzksImV4cCI6MjA3Njk1NDY3OX0.IukGQw9fwHFKWNsmhea-5z4fCOZ8S4b6G3QET1JrHSU';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('currentUrl').textContent = window.location.href;
+        });
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        async function testConnection() {
+            const btn = document.getElementById('testBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span>Testing...';
+
+            // Clear previous results
+            document.getElementById('results').innerHTML = '';
+
+            try {
+                log('🔍 Testing basic API connectivity...', 'info');
+
+                // Test 1: Basic health check
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    log('✅ SUCCESS! Supabase API is reachable and responding', 'success');
+
+                    // Test 2: Try to access partners table
+                    log('🔍 Testing partners table access...', 'info');
+
+                    const partnersResponse = await fetch(`${SUPABASE_URL}/rest/v1/partners?select=count&limit=1`, {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (partnersResponse.ok) {
+                        const data = await partnersResponse.json();
+                        log(`✅ PERFECT! Partners table accessible. Found ${data.length} records.`, 'success');
+                        log('🎉 Your DMK app should now work perfectly!', 'success');
+
+                        setTimeout(() => {
+                            if (confirm('Test successful! Open your DMK app now?')) {
+                                window.open('/dmk/', '_blank');
+                            }
+                        }, 1000);
+
+                    } else if (partnersResponse.status === 404) {
+                        log('⚠️ Connection works but partners table not found. You may need to create the database schema.', 'error');
+                        log('💡 Go to Supabase SQL Editor and run your schema.sql file', 'info');
+                    } else {
+                        log(`⚠️ Connection works but got status ${partnersResponse.status} accessing partners table`, 'error');
+                    }
+
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+            } catch (error) {
+                if (error.message.includes('NetworkError') || error.message.includes('fetch')) {
+                    log('❌ CORS/Network Error: Still blocked!', 'error');
+                    log('🔧 Solutions:', 'info');
+                    log('1. Add http://localhost:8080 to Supabase CORS origins', 'info');
+                    log('2. Wait 5-10 minutes after saving CORS settings', 'info');
+                    log('3. Hard refresh this page (Ctrl+Shift+R)', 'info');
+                    log('4. Check if Supabase project is active (not paused)', 'info');
+                } else {
+                    log(`❌ Unexpected error: ${error.message}`, 'error');
+                }
+
+                log('🆘 If this keeps failing, your network/ISP might be blocking Supabase', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Test Connection Now';
+            }
+        }
+
+        // Auto-run test after 1 second
+        setTimeout(() => {
+            if (confirm('Auto-run connection test now?')) {
+                testConnection();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

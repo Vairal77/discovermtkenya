@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMK Database Connection Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #cce7ff; color: #004085; border: 1px solid #b3d7ff; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DMK Database Connection Test</h1>
+        <p>This tool helps diagnose connection issues between your DMK app and Supabase database.</p>
+
+        <div id="status"></div>
+
+        <div>
+            <button onclick="testConnection()" id="testBtn">Test Connection</button>
+            <button onclick="testPartners()" id="partnersBtn">Load Partners</button>
+            <button onclick="testInsert()" id="insertBtn">Test Insert</button>
+            <button onclick="clearResults()" id="clearBtn">Clear Results</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        // Supabase configuration (same as your app)
+        const SUPABASE_URL = 'https://vwhgnzioqrhjgvxffuyq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aGduemlvcXJoamd2eGZmdXlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNzg2NzksImV4cCI6MjA3Njk1NDY3OX0.IukGQw9fwHFKWNsmhea-5z4fCOZ8S4b6G3QET1JrHSU';
+
+        // Import Supabase from CDN
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${timestamp}:</strong> ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function setLoading(button, loading = true) {
+            if (loading) {
+                button.disabled = true;
+                button.innerHTML = `<span class="loader"></span>Testing...`;
+            } else {
+                button.disabled = false;
+                button.innerHTML = button.id === 'testBtn' ? 'Test Connection' :
+                                  button.id === 'partnersBtn' ? 'Load Partners' :
+                                  button.id === 'insertBtn' ? 'Test Insert' : 'Clear Results';
+            }
+        }
+
+        window.testConnection = async function() {
+            const btn = document.getElementById('testBtn');
+            setLoading(btn, true);
+
+            try {
+                log('🔍 Testing basic Supabase connection...', 'info');
+
+                // Test 1: Basic API health check
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                log('✅ Supabase API is accessible', 'success');
+
+                // Test 2: Database connection
+                const { data, error } = await supabase.from('partners').select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    throw error;
+                }
+
+                log(`✅ Database connection successful! Found ${data} partners in database.`, 'success');
+                log(`🔗 Project URL: ${SUPABASE_URL}`, 'info');
+                log(`🔑 Using API Key: ${SUPABASE_ANON_KEY.substring(0, 20)}...`, 'info');
+
+            } catch (error) {
+                log(`❌ Connection failed: ${error.message}`, 'error');
+                log(`🔍 Debug info: ${JSON.stringify(error, null, 2)}`, 'warning');
+            } finally {
+                setLoading(btn, false);
+            }
+        };
+
+        window.testPartners = async function() {
+            const btn = document.getElementById('partnersBtn');
+            setLoading(btn, true);
+
+            try {
+                log('📊 Loading partners from database...', 'info');
+
+                const { data: partners, error } = await supabase
+                    .from('partners')
+                    .select('id, name, category, rating, promoted')
+                    .limit(10);
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!partners || partners.length === 0) {
+                    log('⚠️ No partners found in database', 'warning');
+                    log('This might be why your app shows "Failed to load Partners"', 'warning');
+                    log('💡 Try running the seed_data.sql script in Supabase SQL Editor', 'info');
+                } else {
+                    log(`✅ Successfully loaded ${partners.length} partners:`, 'success');
+
+                    const partnersHtml = partners.map(p =>
+                        `<div style="margin: 5px 0; padding: 10px; background: #f8f9fa; border-radius: 3px;">
+                            <strong>${p.name}</strong> (${p.category}) - ⭐${p.rating} ${p.promoted ? '🌟 Featured' : ''}
+                        </div>`
+                    ).join('');
+
+                    const div = document.createElement('div');
+                    div.className = 'status success';
+                    div.innerHTML = `<strong>Partners in database:</strong><br>${partnersHtml}`;
+                    document.getElementById('results').appendChild(div);
+                }
+
+            } catch (error) {
+                log(`❌ Failed to load partners: ${error.message}`, 'error');
+
+                if (error.message.includes('relation "partners" does not exist')) {
+                    log('🔧 The partners table doesn\'t exist. Run schema.sql in Supabase SQL Editor.', 'warning');
+                } else if (error.message.includes('permission denied')) {
+                    log('🔒 Permission denied. Check Row Level Security policies.', 'warning');
+                } else {
+                    log(`🔍 Debug info: ${JSON.stringify(error, null, 2)}`, 'warning');
+                }
+            } finally {
+                setLoading(btn, false);
+            }
+        };
+
+        window.testInsert = async function() {
+            const btn = document.getElementById('insertBtn');
+            setLoading(btn, true);
+
+            try {
+                log('🧪 Testing database write permissions...', 'info');
+
+                // Try to insert a test partner
+                const testPartner = {
+                    name: 'Test Partner - ' + Date.now(),
+                    category: 'restaurant',
+                    description: 'Test partner for connection testing',
+                    location: 'Test Location',
+                    phone: '+254700000000',
+                    rating: 4.0,
+                    image: 'https://via.placeholder.com/300x200',
+                    promoted: false
+                };
+
+                const { data, error } = await supabase
+                    .from('partners')
+                    .insert([testPartner])
+                    .select()
+                    .single();
+
+                if (error) {
+                    throw error;
+                }
+
+                log('✅ Test insert successful!', 'success');
+                log(`📝 Created test partner: ${data.name}`, 'success');
+
+                // Clean up - delete the test partner
+                const { error: deleteError } = await supabase
+                    .from('partners')
+                    .delete()
+                    .eq('id', data.id);
+
+                if (deleteError) {
+                    log('⚠️ Could not delete test partner, but insert worked', 'warning');
+                } else {
+                    log('🧹 Test partner cleaned up successfully', 'success');
+                }
+
+            } catch (error) {
+                log(`❌ Insert test failed: ${error.message}`, 'error');
+
+                if (error.message.includes('permission denied')) {
+                    log('🔒 Write permission denied. Your app can read but not write.', 'warning');
+                } else {
+                    log(`🔍 Debug info: ${JSON.stringify(error, null, 2)}`, 'warning');
+                }
+            } finally {
+                setLoading(btn, false);
+            }
+        };
+
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = '';
+            log('🧹 Results cleared', 'info');
+        };
+
+        // Auto-run basic connection test on load
+        window.addEventListener('load', () => {
+            log('🚀 DMK Database Test Tool loaded', 'info');
+            log('Click "Test Connection" to verify your Supabase setup', 'info');
+        });
+    </script>
+</body>
+</html>

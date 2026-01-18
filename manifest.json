@@ -1,0 +1,60 @@
+{
+  "name": "Discover Mount Kenya",
+  "short_name": "DMK",
+  "description": "Mount Kenya's premier destination platform - Discover places to stay, food and beverage outlets, activities and attractions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0E6937",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": [
+    "travel",
+    "food",
+    "accommodation",
+    "activities",
+    "restaurant",
+    "beverage"
+  ],
+  "icons": [
+    {
+      "src": "/media/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/media/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Categories",
+      "short_name": "Categories",
+      "description": "Browse food and service categories",
+      "url": "/categories",
+      "icons": [
+        {
+          "src": "/media/icon.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "View Cart",
+      "short_name": "Cart",
+      "description": "View your shopping cart",
+      "url": "/cart",
+      "icons": [
+        {
+          "src": "/media/icon.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

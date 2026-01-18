@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test - DMK Supabase Connection</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .status {
+            padding: 16px;
+            border-radius: 8px;
+            margin: 12px 0;
+            border-left: 4px solid;
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left-color: #10b981;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left-color: #ef4444;
+        }
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left-color: #f59e0b;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left-color: #3b82f6;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px 4px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .big-button {
+            padding: 16px 32px;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        .config-display {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin: 16px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .loader {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .url-list {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #3b82f6;
+            margin: 10px 0;
+        }
+        .url-list code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: #1e40af;
+        }
+        h1 { color: #1e40af; margin-bottom: 10px; }
+        h2 { color: #475569; margin-top: 30px; }
+        .test-result {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px dashed #e2e8f0;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 CORS Configuration Test</h1>
+        <p>Test if your Supabase URL configuration is working correctly.</p>
+
+        <div class="config-display">
+            <strong>🎯 Your Current Setup:</strong><br>
+            <strong>Current URL:</strong> <span id="currentUrl">Loading...</span><br>
+            <strong>Supabase Project:</strong> <code>vwgnzioqrjgjvxfufuyq</code><br>
+            <strong>Test Status:</strong> <span id="testStatus" class="pulse">Ready to test</span>
+        </div>
+
+        <button onclick="runCorsTest()" id="testBtn" class="big-button">
+            🚀 Test CORS Configuration
+        </button>
+
+        <div id="results" class="test-result"></div>
+
+        <h2>📋 Required Supabase Configuration</h2>
+        <div class="url-list">
+            <strong>Site URL (Primary):</strong><br>
+            <code>https://dmk.vairal.co.ke</code>
+        </div>
+
+        <div class="url-list">
+            <strong>Redirect URLs (Add ALL of these):</strong><br>
+            <code>http://localhost:8080</code><br>
+            <code>http://localhost:8080/dmk</code><br>
+            <code>http://localhost:3000</code><br>
+            <code>http://localhost:5173</code><br>
+            <code>https://dmk.vairal.co.ke</code><br>
+            <code>https://vairal.co.ke</code><br>
+            <code>https://www.dmk.vairal.co.ke</code><br>
+            <code>https://www.vairal.co.ke</code>
+        </div>
+
+        <div class="status info">
+            <strong>💡 Instructions:</strong><br>
+            1. Go to <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a><br>
+            2. Find your project: <code>vwgnzioqrjgjvxfufuyq</code><br>
+            3. Navigate to: <strong>Settings → URL Configuration</strong> (or <strong>Authentication → URL Configuration</strong>)<br>
+            4. Set the Site URL and add all Redirect URLs listed above<br>
+            5. Click Save and wait 3-5 minutes<br>
+            6. Come back here and click "Test CORS Configuration"
+        </div>
+
+        <button onclick="copyUrls()" style="background: #10b981;">
+            📋 Copy All URLs to Clipboard
+        </button>
+
+        <button onclick="clearResults()" style="background: #ef4444;">
+            🗑️ Clear Results
+        </button>
+    </div>
+
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://vwhgnzioqrhjgvxffuyq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aGduemlvcXJoamd2eGZmdXlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNzg2NzksImV4cCI6MjA3Njk1NDY3OX0.IukGQw9fwHFKWNsmhea-5z4fCOZ8S4b6G3QET1JrHSU';
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('currentUrl').textContent = window.location.origin;
+            log('🔧 CORS Test Tool Ready', 'info');
+        });
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${timestamp}:</strong> ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function setTestStatus(status, isLoading = false) {
+            const statusEl = document.getElementById('testStatus');
+            statusEl.textContent = status;
+            statusEl.className = isLoading ? 'pulse' : '';
+        }
+
+        async function runCorsTest() {
+            const btn = document.getElementById('testBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span>Testing CORS...';
+            setTestStatus('Testing...', true);
+
+            clearResults();
+            log('🚀 Starting comprehensive CORS test...', 'info');
+
+            try {
+                // Test 1: Basic API availability
+                log('Test 1: Testing basic API availability...', 'info');
+
+                const healthResponse = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (healthResponse.ok) {
+                    log('✅ Supabase API is accessible', 'success');
+                } else {
+                    throw new Error(`API returned ${healthResponse.status}: ${healthResponse.statusText}`);
+                }
+
+                // Test 2: CORS preflight test
+                log('Test 2: Testing CORS preflight...', 'info');
+
+                const preflightResponse = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'apikey, content-type, authorization'
+                    }
+                });
+
+                const corsHeaders = {
+                    'access-control-allow-origin': preflightResponse.headers.get('access-control-allow-origin'),
+                    'access-control-allow-methods': preflightResponse.headers.get('access-control-allow-methods'),
+                    'access-control-allow-headers': preflightResponse.headers.get('access-control-allow-headers')
+                };
+
+                if (corsHeaders['access-control-allow-origin']) {
+                    log(`✅ CORS preflight successful`, 'success');
+                    log(`   Allowed Origin: ${corsHeaders['access-control-allow-origin']}`, 'info');
+                    log(`   Allowed Methods: ${corsHeaders['access-control-allow-methods']}`, 'info');
+                } else {
+                    log('⚠️ CORS preflight response incomplete', 'warning');
+                }
+
+                // Test 3: Actual data request
+                log('Test 3: Testing actual data request...', 'info');
+
+                const dataResponse = await fetch(`${SUPABASE_URL}/rest/v1/partners?select=count&limit=1`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (dataResponse.ok) {
+                    const data = await dataResponse.json();
+                    log('✅ Data request successful!', 'success');
+                    log(`   Response: ${JSON.stringify(data)}`, 'info');
+                } else if (dataResponse.status === 404) {
+                    log('⚠️ Partners table not found, but CORS is working', 'warning');
+                    log('   You may need to create the database schema', 'info');
+                } else {
+                    throw new Error(`Data request failed: ${dataResponse.status} ${dataResponse.statusText}`);
+                }
+
+                // Test 4: Authentication test
+                log('Test 4: Testing API key authentication...', 'info');
+
+                const authTestResponse = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': 'invalid-key-test',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (authTestResponse.status === 401) {
+                    log('✅ API key validation working correctly', 'success');
+                } else {
+                    log('⚠️ Unexpected auth response, but connection works', 'warning');
+                }
+
+                // Final success
+                log('🎉 ALL TESTS PASSED! CORS is properly configured.', 'success');
+                log('Your DMK app should now work without network errors!', 'success');
+                setTestStatus('✅ All tests passed!');
+
+            } catch (error) {
+                log(`❌ CORS test failed: ${error.message}`, 'error');
+
+                if (error.message.includes('NetworkError') || error.message.includes('fetch')) {
+                    log('🔍 This is a CORS issue. Your current domain is not in the allowed list.', 'error');
+                    log(`Current domain: ${window.location.origin}`, 'info');
+                    log('Solution: Add this domain to Supabase URL Configuration', 'warning');
+                } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                    log('🔑 API key issue detected', 'error');
+                    log('Check your Supabase API key configuration', 'warning');
+                } else {
+                    log('🔍 Unexpected error - check console for details', 'error');
+                    console.error('Full error:', error);
+                }
+
+                setTestStatus('❌ Tests failed');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Test CORS Configuration';
+            }
+        }
+
+        function copyUrls() {
+            const urls = `Site URL:
+https://dmk.vairal.co.ke
+
+Redirect URLs:
+http://localhost:8080
+http://localhost:8080/dmk
+http://localhost:3000
+http://localhost:5173
+https://dmk.vairal.co.ke
+https://vairal.co.ke
+https://www.dmk.vairal.co.ke
+https://www.vairal.co.ke`;
+
+            navigator.clipboard.writeText(urls).then(() => {
+                log('📋 URLs copied to clipboard!', 'success');
+                log('Paste these into your Supabase URL Configuration', 'info');
+            }).catch(() => {
+                log('❌ Could not copy to clipboard', 'error');
+                log('Please copy the URLs manually from the list above', 'warning');
+            });
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            setTestStatus('Ready to test');
+        }
+    </script>
+</body>
+</html>

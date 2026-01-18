@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMK Network Diagnostics</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .status {
+            padding: 16px;
+            border-radius: 8px;
+            margin: 12px 0;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #f0f9ff;
+            color: #0c4a6e;
+            border-left-color: #0ea5e9;
+        }
+        .error {
+            background: #fef2f2;
+            color: #991b1b;
+            border-left-color: #ef4444;
+        }
+        .info {
+            background: #f0f9ff;
+            color: #1e40af;
+            border-left-color: #3b82f6;
+        }
+        .warning {
+            background: #fffbeb;
+            color: #92400e;
+            border-left-color: #f59e0b;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 4px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .btn-danger {
+            background: #ef4444;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        pre {
+            background: #f1f5f9;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+            border: 1px solid #e2e8f0;
+        }
+        .loader {
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .config-box {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin: 16px 0;
+        }
+        .step {
+            margin: 24px 0;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 DMK Network Diagnostics</h1>
+        <p>This tool helps diagnose <strong>NetworkError</strong> issues when connecting to Supabase.</p>
+
+        <div class="config-box">
+            <h3>📋 Current Configuration</h3>
+            <div id="config">Loading configuration...</div>
+        </div>
+
+        <div class="test-grid">
+            <button onclick="testBasicConnectivity()">🌐 Test Internet</button>
+            <button onclick="testSupabaseReachability()">🏠 Test Supabase URL</button>
+            <button onclick="testCORS()">🔐 Test CORS</button>
+            <button onclick="testAuthentication()">🔑 Test API Key</button>
+            <button onclick="runFullDiagnostics()">🚀 Run All Tests</button>
+            <button onclick="clearResults()" class="btn-danger">🗑️ Clear</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="step">
+            <h3>🛠️ Manual Fixes</h3>
+            <p>Try these solutions based on your test results:</p>
+            <div id="solutions"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            supabaseUrl: 'https://vwhgnzioqrhjgvxffuyq.supabase.co',
+            anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aGduemlvcXJoamd2eGZmdXlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNzg2NzksImV4cCI6MjA3Njk1NDY3OX0.IukGQw9fwHFKWNsmhea-5z4fCOZ8S4b6G3QET1JrHSU',
+            testUrls: [
+                'https://google.com',
+                'https://supabase.com',
+                'https://api.supabase.com'
+            ]
+        };
+
+        let testResults = {};
+
+        function log(message, type = 'info', testName = null) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${timestamp}:</strong> ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+
+            if (testName) {
+                testResults[testName] = { type, message, timestamp };
+            }
+        }
+
+        function showConfig() {
+            const configDiv = document.getElementById('config');
+            configDiv.innerHTML = `
+                <strong>Supabase URL:</strong> ${CONFIG.supabaseUrl}<br>
+                <strong>API Key:</strong> ${CONFIG.anonKey.substring(0, 30)}...<br>
+                <strong>Browser:</strong> ${navigator.userAgent.substring(0, 50)}...<br>
+                <strong>Location:</strong> ${window.location.origin}
+            `;
+        }
+
+        async function testBasicConnectivity() {
+            log('🌐 Testing basic internet connectivity...', 'info');
+
+            for (const url of CONFIG.testUrls) {
+                try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 10000);
+
+                    const response = await fetch(url, {
+                        method: 'HEAD',
+                        mode: 'no-cors',
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeout);
+                    log(`✅ Can reach ${url}`, 'success');
+
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        log(`⏰ Timeout reaching ${url}`, 'warning');
+                    } else {
+                        log(`❌ Cannot reach ${url}: ${error.message}`, 'error');
+                    }
+                }
+            }
+            testResults.connectivity = 'tested';
+        }
+
+        async function testSupabaseReachability() {
+            log('🏠 Testing Supabase server reachability...', 'info');
+
+            try {
+                // Test 1: Basic ping to Supabase domain
+                const pingResponse = await fetch(CONFIG.supabaseUrl, {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                log('✅ Supabase domain is reachable', 'success');
+
+                // Test 2: Test REST API endpoint
+                const apiUrl = `${CONFIG.supabaseUrl}/rest/v1/`;
+                const apiResponse = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': CONFIG.anonKey
+                    }
+                });
+
+                if (apiResponse.ok) {
+                    log('✅ Supabase REST API is responding', 'success', 'supabase_reachable');
+                } else {
+                    log(`⚠️ Supabase API responded with status ${apiResponse.status}`, 'warning');
+                }
+
+            } catch (error) {
+                log(`❌ Cannot reach Supabase: ${error.message}`, 'error', 'supabase_unreachable');
+
+                if (error.message.includes('NetworkError')) {
+                    log('🔍 This is the same NetworkError your app is experiencing', 'warning');
+                }
+            }
+        }
+
+        async function testCORS() {
+            log('🔐 Testing CORS configuration...', 'info');
+
+            try {
+                const response = await fetch(`${CONFIG.supabaseUrl}/rest/v1/`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'apikey, content-type'
+                    }
+                });
+
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+
+                if (corsHeaders['Access-Control-Allow-Origin']) {
+                    log('✅ CORS is properly configured', 'success', 'cors_ok');
+                    log(`Allowed origin: ${corsHeaders['Access-Control-Allow-Origin']}`, 'info');
+                } else {
+                    log('⚠️ CORS headers not found', 'warning', 'cors_issue');
+                }
+
+            } catch (error) {
+                log(`❌ CORS test failed: ${error.message}`, 'error', 'cors_failed');
+            }
+        }
+
+        async function testAuthentication() {
+            log('🔑 Testing API key authentication...', 'info');
+
+            try {
+                const response = await fetch(`${CONFIG.supabaseUrl}/rest/v1/partners?select=count`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': CONFIG.anonKey,
+                        'Authorization': `Bearer ${CONFIG.anonKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ API key authentication successful', 'success', 'auth_ok');
+                    log(`Response: ${JSON.stringify(data)}`, 'info');
+                } else if (response.status === 401) {
+                    log('❌ API key is invalid or expired', 'error', 'auth_failed');
+                } else if (response.status === 404) {
+                    log('⚠️ Partners table not found (but auth is working)', 'warning');
+                } else {
+                    log(`⚠️ Unexpected response: ${response.status} ${response.statusText}`, 'warning');
+                }
+
+            } catch (error) {
+                log(`❌ Authentication test failed: ${error.message}`, 'error', 'auth_error');
+            }
+        }
+
+        async function runFullDiagnostics() {
+            log('🚀 Running comprehensive diagnostics...', 'info');
+            clearResults();
+
+            await testBasicConnectivity();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testSupabaseReachability();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testCORS();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testAuthentication();
+
+            generateSolutions();
+        }
+
+        function generateSolutions() {
+            const solutionsDiv = document.getElementById('solutions');
+            let solutions = [];
+
+            if (testResults.supabase_unreachable) {
+                solutions.push(`
+                    <div class="status error">
+                        <strong>🚨 Supabase Connection Issue</strong><br>
+                        Your app cannot reach the Supabase server. This could be:
+                        <ul>
+                            <li><strong>Firewall/Proxy:</strong> Your network is blocking Supabase</li>
+                            <li><strong>ISP Issues:</strong> Your internet provider is blocking the connection</li>
+                            <li><strong>Project Paused:</strong> Your Supabase project might be paused</li>
+                            <li><strong>Wrong URL:</strong> Check if the project URL is correct</li>
+                        </ul>
+                        <strong>Solutions:</strong>
+                        <ol>
+                            <li>Check your Supabase project status at <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a></li>
+                            <li>Try accessing from a different network (mobile hotspot)</li>
+                            <li>Contact your network administrator about Supabase access</li>
+                        </ol>
+                    </div>
+                `);
+            }
+
+            if (testResults.cors_failed || testResults.cors_issue) {
+                solutions.push(`
+                    <div class="status warning">
+                        <strong>🔐 CORS Configuration Issue</strong><br>
+                        Cross-Origin Resource Sharing (CORS) is not properly configured.
+                        <br><strong>Solution:</strong> Add your domain to Supabase CORS settings:
+                        <ol>
+                            <li>Go to Supabase Dashboard → Settings → API</li>
+                            <li>Add your domain to "CORS origins"</li>
+                            <li>Add: <code>${window.location.origin}</code></li>
+                        </ol>
+                    </div>
+                `);
+            }
+
+            if (testResults.auth_failed) {
+                solutions.push(`
+                    <div class="status error">
+                        <strong>🔑 API Key Issue</strong><br>
+                        Your API key is invalid or expired.
+                        <br><strong>Solution:</strong>
+                        <ol>
+                            <li>Go to Supabase Dashboard → Settings → API</li>
+                            <li>Copy the "anon public" key</li>
+                            <li>Update it in your app's configuration</li>
+                        </ol>
+                    </div>
+                `);
+            }
+
+            if (solutions.length === 0) {
+                solutions.push(`
+                    <div class="status success">
+                        <strong>✅ All Network Tests Passed</strong><br>
+                        Your network connection to Supabase seems fine. The issue might be:
+                        <ul>
+                            <li>Application code error</li>
+                            <li>Database schema missing</li>
+                            <li>Row Level Security policies</li>
+                        </ul>
+                        Try the database test tool: <a href="test-db.html" target="_blank">test-db.html</a>
+                    </div>
+                `);
+            }
+
+            solutionsDiv.innerHTML = solutions.join('');
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('solutions').innerHTML = '';
+            testResults = {};
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            showConfig();
+            log('🔧 Network Diagnostics Tool Ready', 'info');
+            log('Click "Run All Tests" to diagnose your NetworkError issue', 'info');
+        });
+    </script>
+</body>
+</html>
