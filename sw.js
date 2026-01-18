@@ -1,16 +1,15 @@
 const CACHE_NAME = 'dmk-pwa-v1';
 const MEDIA_ASSETS = [
-  '/media/splash.gif',
-  '/media/homehero.jpg',
-  '/media/categorieshero.jpg',
-  '/media/icon.png'
+  'media/splash.gif',
+  'media/homehero.jpg',
+  'media/categorieshero.jpg',
+  'media/icon.png'
 ];
 
 const STATIC_URLS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.ico'
+  'index.html',
+  'manifest.json',
+  'favicon.ico'
 ];
 
 // Install event - cache critical resources
@@ -48,7 +47,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Handle Media Assets - Cache First
-  if (url.pathname.startsWith('/media/')) {
+  if (url.pathname.includes('/media/')) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         if (cachedResponse) {
