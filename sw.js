@@ -82,6 +82,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Handle External Images (Unsplash, etc.) - Stale While Revalidate
+  if (url.hostname.includes('unsplash.com') || url.pathname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          // Basic cross-origin check
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'cors') {
+            putInCache(event.request, networkResponse.clone());
+          } else if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            putInCache(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        }).catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
   // Standard static assets - Stale While Revalidate
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
