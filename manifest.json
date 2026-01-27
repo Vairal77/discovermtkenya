@@ -1,7 +1,7 @@
 {
   "name": "Discover Mount Kenya",
-  "short_name": "DMK",
-  "description": "Mount Kenya's premier destination platform - Discover places to stay, food and beverage outlets, activities and attractions",
+  "short_name": "Discover Mt Kenya",
+  "description": "Crafted experiences. Trusted places.",
   "start_url": "/discovermtkenya/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -29,6 +29,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "media/homehero.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Home Screen"
+    },
+    {
+      "src": "media/categorieshero.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Explore Categories"
     }
   ],
   "shortcuts": [
